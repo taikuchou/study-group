@@ -73,11 +73,11 @@ const TopicList: React.FC<Props> = ({
         </div>
         {currentUserRole === 'admin' && (
           <button
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+            className="bg-blue-600 text-white w-10 h-10 rounded-lg hover:bg-blue-700 flex items-center justify-center"
             onClick={onNewTopic}
+            title="新增主題"
           >
             <Plus className="w-4 h-4" />
-            新增主題
           </button>
         )}
       </div>
@@ -150,11 +150,11 @@ const TopicList: React.FC<Props> = ({
                   <h4 className="font-medium text-gray-900">場次列表</h4>
                   {currentUserRole === 'admin' && (
                     <button
-                      className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1"
+                      className="text-blue-600 hover:text-blue-700 w-6 h-6 flex items-center justify-center rounded"
                       onClick={() => onNewSession?.(topic)}
+                      title="新增場次"
                     >
                       <Plus className="w-3 h-3" />
-                      新增場次
                     </button>
                   )}
                 </div>

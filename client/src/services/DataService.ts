@@ -18,6 +18,8 @@ export interface DataService {
   // Interactions
   listInteractions(): Promise<Interaction[]>;
   createInteraction(i: Interaction): Promise<Interaction>;
+  updateInteraction(i: Interaction): Promise<Interaction>;
+  deleteInteraction(id: number): Promise<void>;
 }
 
 export type ServiceFactory = () => DataService;

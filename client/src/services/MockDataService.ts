@@ -53,4 +53,16 @@ export class MockDataService implements DataService {
     this.interactions.push(i);
     return i;
   }
+
+  async updateInteraction(i: Interaction): Promise<Interaction> {
+    const index = this.interactions.findIndex(interaction => interaction.id === i.id);
+    if (index !== -1) {
+      this.interactions[index] = i;
+    }
+    return i;
+  }
+
+  async deleteInteraction(id: number): Promise<void> {
+    this.interactions = this.interactions.filter(i => i.id !== id);
+  }
 }

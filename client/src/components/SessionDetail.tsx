@@ -4,6 +4,7 @@ import {
   Heart, Lightbulb, Edit, Trash2, User as UserIcon, ChevronLeft, Plus, Users, X, Check, X as XIcon
 } from 'lucide-react';
 import type { Topic, User, Interaction } from '../types';
+import { canPerformSessionAction, canPerformInteractionAction } from '../context/Ownership';
 
 type Session = Topic['sessions'][number];
 
@@ -12,6 +13,7 @@ type Props = {
   session: Session;
   users: User[];
   interactions: Interaction[]; // 僅該 session 的互動（父元件先過濾）
+  currentUser: User;
   onBack: () => void;
   onEditSession?: (s: Session) => void;
   onDeleteSession?: (s: Session) => void;
@@ -20,15 +22,36 @@ type Props = {
   onAddQuestion?: () => void;
   onAddInsight?: () => void;
   onAddSpeakerFeedback?: () => void;
+  onEditInteraction?: (interaction: Interaction) => void;
+  onDeleteInteraction?: (interaction: Interaction) => void;
 };
 
 const SessionDetail: React.FC<Props> = ({
-  topic, session, users, interactions, onBack, onEditSession, onDeleteSession, onAddNoteLink, onAddReference, onAddQuestion, onAddInsight, onAddSpeakerFeedback
+  topic, session, users, interactions, currentUser, onBack, onEditSession, onDeleteSession, onAddNoteLink, onAddReference, onAddQuestion, onAddInsight, onAddSpeakerFeedback, onEditInteraction, onDeleteInteraction
 }) => {
   const [showAttendeesModal, setShowAttendeesModal] = useState(false);
 
   const getUserName = (userId: number) =>
     users.find(u => u.id === userId)?.name ?? 'Unknown User';
+
+  const formatDateTime = (dateTimeStr: string) => {
+    try {
+      const date = new Date(dateTimeStr);
+      return date.toLocaleString('zh-TW', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return dateTimeStr;
+    }
+  };
+
+  // Check if current user can edit/delete this session
+  const canEditSession = canPerformSessionAction(currentUser, 'edit', session);
+  const canDeleteSession = canPerformSessionAction(currentUser, 'delete', session);
 
   const byType = useMemo(() => {
     return {
@@ -54,18 +77,22 @@ const SessionDetail: React.FC<Props> = ({
         </button>
 
         <div className="flex items-center gap-2">
-          <button
-            className="px-3 py-1 rounded border text-gray-700 hover:bg-gray-50"
-            onClick={() => onEditSession?.(session)}
-          >
-            <Edit className="w-4 h-4 inline -mt-1 mr-1" /> 編輯場次
-          </button>
-          <button
-            className="px-3 py-1 rounded border text-red-600 hover:bg-red-50"
-            onClick={() => onDeleteSession?.(session)}
-          >
-            <Trash2 className="w-4 h-4 inline -mt-1 mr-1" /> 刪除
-          </button>
+          {canEditSession && (
+            <button
+              className="px-3 py-1 rounded border text-gray-700 hover:bg-gray-50"
+              onClick={() => onEditSession?.(session)}
+            >
+              <Edit className="w-4 h-4 inline -mt-1 mr-1" /> 編輯場次
+            </button>
+          )}
+          {canDeleteSession && (
+            <button
+              className="px-3 py-1 rounded border text-red-600 hover:bg-red-50"
+              onClick={() => onDeleteSession?.(session)}
+            >
+              <Trash2 className="w-4 h-4 inline -mt-1 mr-1" /> 刪除
+            </button>
+          )}
         </div>
       </div>
 
@@ -103,33 +130,59 @@ const SessionDetail: React.FC<Props> = ({
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <LinkIcon className="w-4 h-4" />
-            <h3 className="font-semibold text-gray-900">筆記連結</h3>
+            <h3 className="font-semibold text-gray-900">筆記連結 ({session.noteLinks.length + byType.noteLink.length})</h3>
           </div>
           {onAddNoteLink && (
             <button
               onClick={onAddNoteLink}
-              className="inline-flex items-center gap-1 px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+              className="inline-flex items-center justify-center w-8 h-8 bg-blue-600 text-white rounded hover:bg-blue-700"
+              title="新增筆記連結"
             >
               <Plus className="w-4 h-4" />
-              新增筆記連結
             </button>
           )}
         </div>
         {(session.noteLinks.length > 0 || byType.noteLink.length > 0) ? (
           <ul className="space-y-2">
             {session.noteLinks.map((url, idx) => (
-              <li key={`s-notelink-${idx}`}>
+              <li key={`s-notelink-${idx}`} className="border-l-2 border-gray-300 pl-3">
                 <a href={url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">
                   {url}
                 </a>
+                <div className="text-xs text-gray-400 mt-1">系統資料</div>
               </li>
             ))}
             {byType.noteLink.map((i: Interaction & { type: 'noteLink'; label: string; description: string; url: string; }) => (
-              <li key={`i-notelink-${i.id}`}>
-                <a href={i.url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">
-                  {i.label}
-                </a>
-                {i.description && <span className="text-gray-500 ml-2">— {i.description}</span>}
+              <li key={`i-notelink-${i.id}`} className="border-l-2 border-blue-200 pl-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <a href={i.url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline font-medium">
+                      {i.label}
+                    </a>
+                    {i.description && <span className="text-gray-500 ml-2">— {i.description}</span>}
+                    <div className="text-xs text-gray-400 mt-1">
+                      {getUserName(i.authorId)} • {formatDateTime(i.createdAt)}
+                    </div>
+                  </div>
+                  {canPerformInteractionAction(currentUser, 'edit', i) && (
+                    <div className="flex items-center gap-1 ml-2">
+                      <button
+                        onClick={() => onEditInteraction?.(i)}
+                        className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                        title="編輯"
+                      >
+                        <Edit className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={() => onDeleteInteraction?.(i)}
+                        className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+                        title="刪除"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
@@ -143,25 +196,55 @@ const SessionDetail: React.FC<Props> = ({
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <FileText className="w-4 h-4" />
-            <h3 className="font-semibold text-gray-900">參考資料</h3>
+            <h3 className="font-semibold text-gray-900">參考資料 ({session.references.length + byType.reference.length})</h3>
           </div>
           {onAddReference && (
             <button
               onClick={onAddReference}
-              className="inline-flex items-center gap-1 px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
+              className="inline-flex items-center justify-center w-8 h-8 bg-green-600 text-white rounded hover:bg-green-700"
+              title="新增參考資料"
             >
               <Plus className="w-4 h-4" />
-              新增參考資料
             </button>
           )}
         </div>
         {(session.references.length > 0 || byType.reference.length > 0) ? (
-          <ul className="list-disc list-inside space-y-1 text-gray-800">
+          <ul className="space-y-2">
             {session.references.map((ref, idx) => (
-              <li key={`s-ref-${idx}`}>{ref}</li>
+              <li key={`s-ref-${idx}`} className="border-l-2 border-gray-300 pl-3">
+                <div className="text-gray-800">• {ref}</div>
+                <div className="text-xs text-gray-400 mt-1">系統資料</div>
+              </li>
             ))}
             {byType.reference.map((i) => (
-              <li key={`i-ref-${i.id}`}>{(i as any).content}</li>
+              <li key={`i-ref-${i.id}`} className="border-l-2 border-green-200 pl-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="text-gray-800">• {(i as any).content}</div>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {getUserName(i.authorId)} • {formatDateTime(i.createdAt)}
+                    </div>
+                  </div>
+                  {canPerformInteractionAction(currentUser, 'edit', i) && (
+                    <div className="flex items-center gap-1 ml-2">
+                      <button
+                        onClick={() => onEditInteraction?.(i)}
+                        className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                        title="編輯"
+                      >
+                        <Edit className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={() => onDeleteInteraction?.(i)}
+                        className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+                        title="刪除"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </li>
             ))}
           </ul>
         ) : (
@@ -175,26 +258,53 @@ const SessionDetail: React.FC<Props> = ({
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <MessageSquare className="w-4 h-4" />
-              <h3 className="font-semibold">問題</h3>
+              <h3 className="font-semibold">提問 ({byType.question.length})</h3>
             </div>
             {onAddQuestion && (
               <button
                 onClick={onAddQuestion}
-                className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-orange-600 text-white rounded hover:bg-orange-700"
+                className="inline-flex items-center justify-center w-6 h-6 bg-orange-600 text-white rounded hover:bg-orange-700"
+                title="新增提問"
               >
                 <Plus className="w-3 h-3" />
-                新增
               </button>
             )}
           </div>
           {byType.question.length > 0 ? (
-            <ul className="space-y-2">
+            <ul className="space-y-3">
               {byType.question.map(q => (
-                <li key={q.id} className="text-gray-800">{(q as any).content}</li>
+                <li key={q.id} className="border-l-2 border-orange-200 pl-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="text-gray-800">{(q as any).content}</div>
+                      <div className="text-xs text-gray-400 mt-1">
+                        {getUserName(q.authorId)} • {formatDateTime(q.createdAt)}
+                      </div>
+                    </div>
+                    {canPerformInteractionAction(currentUser, 'edit', q) && (
+                      <div className="flex items-center gap-1 ml-2">
+                        <button
+                          onClick={() => onEditInteraction?.(q)}
+                          className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                          title="編輯"
+                        >
+                          <Edit className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={() => onDeleteInteraction?.(q)}
+                          className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+                          title="刪除"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </li>
               ))}
             </ul>
           ) : (
-            <p className="text-gray-500 text-sm">暫無問題</p>
+            <p className="text-gray-500 text-sm">暫無提問</p>
           )}
         </section>
 
@@ -202,26 +312,53 @@ const SessionDetail: React.FC<Props> = ({
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Lightbulb className="w-4 h-4" />
-              <h3 className="font-semibold">本週洞見</h3>
+              <h3 className="font-semibold">本週心得 ({byType.weeklyInsight.length})</h3>
             </div>
             {onAddInsight && (
               <button
                 onClick={onAddInsight}
-                className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-yellow-600 text-white rounded hover:bg-yellow-700"
+                className="inline-flex items-center justify-center w-6 h-6 bg-yellow-600 text-white rounded hover:bg-yellow-700"
+                title="新增本週心得"
               >
                 <Plus className="w-3 h-3" />
-                新增
               </button>
             )}
           </div>
           {byType.weeklyInsight.length > 0 ? (
-            <ul className="space-y-2">
+            <ul className="space-y-3">
               {byType.weeklyInsight.map(w => (
-                <li key={w.id} className="text-gray-800">{(w as any).content}</li>
+                <li key={w.id} className="border-l-2 border-yellow-200 pl-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="text-gray-800">{(w as any).content}</div>
+                      <div className="text-xs text-gray-400 mt-1">
+                        {getUserName(w.authorId)} • {formatDateTime(w.createdAt)}
+                      </div>
+                    </div>
+                    {canPerformInteractionAction(currentUser, 'edit', w) && (
+                      <div className="flex items-center gap-1 ml-2">
+                        <button
+                          onClick={() => onEditInteraction?.(w)}
+                          className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                          title="編輯"
+                        >
+                          <Edit className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={() => onDeleteInteraction?.(w)}
+                          className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+                          title="刪除"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </li>
               ))}
             </ul>
           ) : (
-            <p className="text-gray-500 text-sm">暫無本週洞見</p>
+            <p className="text-gray-500 text-sm">暫無本週心得</p>
           )}
         </section>
 
@@ -229,26 +366,53 @@ const SessionDetail: React.FC<Props> = ({
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Heart className="w-4 h-4" />
-              <h3 className="font-semibold">講者回饋</h3>
+              <h3 className="font-semibold">對分享者建議 ({byType.speakerFeedback.length})</h3>
             </div>
             {onAddSpeakerFeedback && (
               <button
                 onClick={onAddSpeakerFeedback}
-                className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
+                className="inline-flex items-center justify-center w-6 h-6 bg-red-600 text-white rounded hover:bg-red-700"
+                title="新增對分享者建議"
               >
                 <Plus className="w-3 h-3" />
-                新增
               </button>
             )}
           </div>
           {byType.speakerFeedback.length > 0 ? (
-            <ul className="space-y-2">
+            <ul className="space-y-3">
               {byType.speakerFeedback.map(f => (
-                <li key={f.id} className="text-gray-800">{(f as any).content}</li>
+                <li key={f.id} className="border-l-2 border-red-200 pl-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="text-gray-800">{(f as any).content}</div>
+                      <div className="text-xs text-gray-400 mt-1">
+                        {getUserName(f.authorId)} • {formatDateTime(f.createdAt)}
+                      </div>
+                    </div>
+                    {canPerformInteractionAction(currentUser, 'edit', f) && (
+                      <div className="flex items-center gap-1 ml-2">
+                        <button
+                          onClick={() => onEditInteraction?.(f)}
+                          className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                          title="編輯"
+                        >
+                          <Edit className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={() => onDeleteInteraction?.(f)}
+                          className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+                          title="刪除"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </li>
               ))}
             </ul>
           ) : (
-            <p className="text-gray-500 text-sm">暫無講者回饋</p>
+            <p className="text-gray-500 text-sm">暫無對分享者建議</p>
           )}
         </section>
 
@@ -256,11 +420,38 @@ const SessionDetail: React.FC<Props> = ({
           <section className="bg-white border rounded-lg p-6 shadow-sm">
             <div className="flex items-center gap-2 mb-3">
               <FileText className="w-4 h-4" />
-              <h3 className="font-semibold">大綱建議</h3>
+              <h3 className="font-semibold">大綱建議 ({byType.outlineSuggestion.length})</h3>
             </div>
-            <ul className="space-y-2">
+            <ul className="space-y-3">
               {byType.outlineSuggestion.map(s => (
-                <li key={s.id} className="text-gray-800">{(s as any).content}</li>
+                <li key={s.id} className="border-l-2 border-gray-200 pl-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="text-gray-800">{(s as any).content}</div>
+                      <div className="text-xs text-gray-400 mt-1">
+                        {getUserName(s.authorId)} • {formatDateTime(s.createdAt)}
+                      </div>
+                    </div>
+                    {canPerformInteractionAction(currentUser, 'edit', s) && (
+                      <div className="flex items-center gap-1 ml-2">
+                        <button
+                          onClick={() => onEditInteraction?.(s)}
+                          className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                          title="編輯"
+                        >
+                          <Edit className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={() => onDeleteInteraction?.(s)}
+                          className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+                          title="刪除"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </li>
               ))}
             </ul>
           </section>

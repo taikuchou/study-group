@@ -24,11 +24,11 @@ const UserManagement: React.FC<Props> = ({
         <h2 className="text-2xl font-bold text-gray-900">使用者管理</h2>
         {currentUserRole === 'admin' && (
           <button
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+            className="bg-blue-600 text-white w-10 h-10 rounded-lg hover:bg-blue-700 flex items-center justify-center"
             onClick={onCreateUser}
+            title="新增使用者"
           >
             <Plus className="w-4 h-4" />
-            新增使用者
           </button>
         )}
       </div>

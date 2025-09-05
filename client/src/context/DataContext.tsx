@@ -5,23 +5,34 @@ import { MockDataService } from '../services/MockDataService';
 import { ApiDataService } from '../services/ApiDataService';
 import { canPerform, type Action, type Ownable } from './Ownership';
 
+
+
 export type DataSource = 'api' | 'mock';
 
-function resolveDefaultSource(): DataSource {
-  //const explicit = (process.env.REACT_APP_DATA_SOURCE ?? '').toLowerCase();
-  //if (explicit === 'api' || explicit === 'mock') return explicit as DataSource;
-  // const explicit = (process.env.REACT_APP_DATA_SOURCE ?? '').toLowerCase();
-  // if (explicit === 'api' || explicit === 'mock') return explicit as DataSource;
-  const useMock = true;
-  console.log("resolveDefaultSource",useMock)
-  return useMock ? 'mock' : 'api';
-}
+// function resolveDefaultSource(): DataSource {
+//   //const explicit = (process.env.REACT_APP_DATA_SOURCE ?? '').toLowerCase();
+//   //if (explicit === 'api' || explicit === 'mock') return explicit as DataSource;
+//   // const explicit = (process.env.REACT_APP_DATA_SOURCE ?? '').toLowerCase();
+//   // if (explicit === 'api' || explicit === 'mock') return explicit as DataSource;
+//   const useMock = true;
+//   console.log("resolveDefaultSource",useMock)
+//   return useMock ? 'mock' : 'api';
+// }
 
+// function serviceFrom(source: DataSource): DataService {
+//   // const explicit = (process.env.REACT_APP_DATA_SOURCE ?? '').toLowerCase();
+//   // if (explicit === 'api' || explicit === 'mock') return explicit as DataSource;
+//   console.log(source)
+//   source = 'mock'
+//   return source === 'api' ? new ApiDataService() : new MockDataService();
+// }
+function resolveDefaultSource(): DataSource {
+  const fromEnv = (import.meta.env.VITE_DATA_SOURCE ?? '').toLowerCase();
+  console.log('resolveDefaultSource:', fromEnv);
+  return fromEnv === 'api' ? 'api' : 'mock';
+}
 function serviceFrom(source: DataSource): DataService {
-  // const explicit = (process.env.REACT_APP_DATA_SOURCE ?? '').toLowerCase();
-  // if (explicit === 'api' || explicit === 'mock') return explicit as DataSource;
-  console.log(source)
-  source = 'mock'
+  console.log('serviceFrom:', source);
   return source === 'api' ? new ApiDataService() : new MockDataService();
 }
 
@@ -44,6 +55,8 @@ type DataContextValue = {
   updateTopic: (t: Topic) => Promise<Topic>;
   deleteTopic: (id: number) => Promise<void>;
   createInteraction: (i: Interaction) => Promise<Interaction>;
+  updateInteraction: (i: Interaction) => Promise<Interaction>;
+  deleteInteraction: (id: number) => Promise<void>;
 
   can: (action: Action, target: Ownable) => boolean;
   OwnershipGuard: <P extends { ownerId?: number }>(
@@ -134,6 +147,17 @@ export const DataProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     return created;
   };
 
+  const updateInteraction = async (i: Interaction) => {
+    const updated = await dataService.updateInteraction(i);
+    setInteractions(prev => prev.map(x => (x.id === updated.id ? updated : x)));
+    return updated;
+  };
+
+  const deleteInteraction = async (id: number) => {
+    await dataService.deleteInteraction(id);
+    setInteractions(prev => prev.filter(x => x.id !== id));
+  };
+
   const can = (action: Action, target: Ownable) => canPerform(currentUser, action, target);
   const OwnershipGuard: DataContextValue['OwnershipGuard'] = ({ action, target, fallback = null, children }) => {
     return can(action, target) ? <>{children}</> : <>{fallback}</>;
@@ -145,7 +169,8 @@ export const DataProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     loading, error,
     reload,
     createUser, updateUser, deleteUser,
-    createTopic, updateTopic, deleteTopic, createInteraction,
+    createTopic, updateTopic, deleteTopic, 
+    createInteraction, updateInteraction, deleteInteraction,
     can, OwnershipGuard,
     source, setSource,
   }), [currentUser, users, topics, interactions, loading, error, source]);
