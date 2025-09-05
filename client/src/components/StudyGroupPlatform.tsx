@@ -8,7 +8,9 @@ import {
   // import { mockUsers, mockTopics, mockInteractions } from '../data/mockData';
 import TopicList from './TopicList';
 import SessionDetail from './SessionDetail';
-import UserManagement from './UserManagement';
+// import UserManagement from './UserManagement';
+import { UserManagement, UserForm, useUsers } from '../features/users';
+// import { SessionDetail, SessionForm, useSessions } from '../features/sessions';
 import { useData } from '../context/DataContext';
 import { useLanguage, useTranslation } from '../context/LanguageContext';
 import { Language, languageNames } from '../locales';
@@ -32,12 +34,20 @@ const StudyGroupPlatform = () => {
   const [editingSession, setEditingSession] = useState(null);
   const [editingUser, setEditingUser] = useState(null);
   const [editingInteraction, setEditingInteraction] = useState(null);
+  const [showUserForm, setShowUserForm] = useState(false);
+  const [showSessionForm, setShowSessionForm] = useState(false);
   const [showUserSwitcher, setShowUserSwitcher] = useState(false);
   const [showDataSourceSwitcher, setShowDataSourceSwitcher] = useState(false);
   const [showLanguageSwitcher, setShowLanguageSwitcher] = useState(false);
 
   // 模擬數據
-  const { currentUser, setCurrentUser, users, topics, interactions, loading, error, reload, createUser, updateUser, deleteUser, createTopic, updateTopic, deleteTopic, createInteraction, updateInteraction, deleteInteraction, source, setSource } = useData();
+  const { currentUser, setCurrentUser, users, topics, interactions, loading, error, reload, createTopic, updateTopic, deleteTopic, createInteraction, updateInteraction, deleteInteraction, source, setSource } = useData();
+  
+  // 用戶管理 (feature-based)
+  const { createUser, updateUser, deleteUser } = useUsers();
+  
+  // 場次管理 (feature-based) - 暫時註解
+  // const { createSession, updateSession } = useSessions();
   
   // 語言
   const { language, setLanguage } = useLanguage();
@@ -884,10 +894,13 @@ const StudyGroupPlatform = () => {
   <UserManagement
     users={users}
     currentUserRole={currentUser.role as 'admin' | 'user'}
-    onCreateUser={() => setShowModal('newUser')}
+    onCreateUser={() => {
+      setEditingUser(null);
+      setShowUserForm(true);
+    }}
     onEditUser={(u) => {
       setEditingUser(u);
-      setShowModal('editUser');
+      setShowUserForm(true);
     }}
     onDeleteUser={(u) => {
       if (window.confirm(t('user.deleteConfirm', { name: u.name }))) {
@@ -902,6 +915,39 @@ const StudyGroupPlatform = () => {
 
       {/* 模態框 */}
       {renderModal()}
+      
+      {/* 用戶管理表單 (feature-based) */}
+      <UserForm
+        open={showUserForm}
+        onClose={() => {
+          setShowUserForm(false);
+          setEditingUser(null);
+        }}
+        initialValue={editingUser}
+        onSubmit={editingUser ? 
+          (data) => updateUser({ ...editingUser, ...data }) : 
+          createUser
+        }
+      />
+      
+      {/* 場次管理表單 (feature-based) - 暫時註解 */}
+      {/* {(currentTopicForSession || selectedTopic) && (
+        <SessionForm
+          open={showSessionForm}
+          onClose={() => {
+            setShowSessionForm(false);
+            setEditingSession(null);
+            setCurrentTopicForSession(null);
+          }}
+          initialValue={editingSession}
+          topic={currentTopicForSession || selectedTopic}
+          users={users}
+          onSubmit={editingSession ? 
+            (data) => updateSession(selectedTopic.id, editingSession.id, data) : 
+            (data) => createSession((currentTopicForSession || selectedTopic).id, data)
+          }
+        />
+      )} */}
     </div>
   );
 };
