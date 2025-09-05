@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import type { Topic, User, Interaction } from '../types';
 import { canPerformSessionAction, canPerformInteractionAction } from '../context/Ownership';
+import { useTranslation } from '../context/LanguageContext';
 
 type Session = Topic['sessions'][number];
 
@@ -29,10 +30,11 @@ type Props = {
 const SessionDetail: React.FC<Props> = ({
   topic, session, users, interactions, currentUser, onBack, onEditSession, onDeleteSession, onAddNoteLink, onAddReference, onAddQuestion, onAddInsight, onAddSpeakerFeedback, onEditInteraction, onDeleteInteraction
 }) => {
+  const { t } = useTranslation();
   const [showAttendeesModal, setShowAttendeesModal] = useState(false);
 
   const getUserName = (userId: number) =>
-    users.find(u => u.id === userId)?.name ?? 'Unknown User';
+    users.find(u => u.id === userId)?.name ?? t('common.unknownUser');
 
   const formatDateTime = (dateTimeStr: string) => {
     try {
@@ -73,7 +75,7 @@ const SessionDetail: React.FC<Props> = ({
           className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900"
         >
           <ChevronLeft className="w-4 h-4" />
-          返回主題
+          {t('session.back')}
         </button>
 
         <div className="flex items-center gap-2">
@@ -82,7 +84,7 @@ const SessionDetail: React.FC<Props> = ({
               className="px-3 py-1 rounded border text-gray-700 hover:bg-gray-50"
               onClick={() => onEditSession?.(session)}
             >
-              <Edit className="w-4 h-4 inline -mt-1 mr-1" /> 編輯場次
+              <Edit className="w-4 h-4 inline -mt-1 mr-1" /> {t('session.editSession')}
             </button>
           )}
           {canDeleteSession && (
@@ -90,7 +92,7 @@ const SessionDetail: React.FC<Props> = ({
               className="px-3 py-1 rounded border text-red-600 hover:bg-red-50"
               onClick={() => onDeleteSession?.(session)}
             >
-              <Trash2 className="w-4 h-4 inline -mt-1 mr-1" /> 刪除
+              <Trash2 className="w-4 h-4 inline -mt-1 mr-1" /> {t('session.deleteSession')}
             </button>
           )}
         </div>
@@ -106,17 +108,17 @@ const SessionDetail: React.FC<Props> = ({
           </span>
           <span className="inline-flex items-center gap-1">
             <UserIcon className="w-4 h-4" />
-            分享者：{getUserName(session.presenterId)}
+            {t('session.presenter')}: {getUserName(session.presenterId)}
           </span>
           <button 
             className="inline-flex items-center gap-1 hover:text-blue-600 transition-colors"
             onClick={() => setShowAttendeesModal(true)}
           >
             <Users className="w-4 h-4" />
-            出席：{session.attendees?.length || 0} 人
+            {t('session.attendees')}: {session.attendees?.length || 0}
           </button>
           <span className="inline-flex items-center gap-1">
-            <FileText className="w-4 h-4" /> 所屬主題：{topic.title}
+            <FileText className="w-4 h-4" /> {topic.title}
           </span>
         </div>
 
@@ -130,13 +132,13 @@ const SessionDetail: React.FC<Props> = ({
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <LinkIcon className="w-4 h-4" />
-            <h3 className="font-semibold text-gray-900">筆記連結 ({session.noteLinks.length + byType.noteLink.length})</h3>
+            <h3 className="font-semibold text-gray-900">{t('interaction.noteLink')} ({session.noteLinks.length + byType.noteLink.length})</h3>
           </div>
           {onAddNoteLink && (
             <button
               onClick={onAddNoteLink}
               className="inline-flex items-center justify-center w-8 h-8 bg-blue-600 text-white rounded hover:bg-blue-700"
-              title="新增筆記連結"
+              title={t('modal.newNoteLink')}
             >
               <Plus className="w-4 h-4" />
             </button>
@@ -187,7 +189,7 @@ const SessionDetail: React.FC<Props> = ({
             ))}
           </ul>
         ) : (
-          <p className="text-gray-500 text-sm">暫無筆記連結</p>
+          <p className="text-gray-500 text-sm">{t('interaction.noContent')}</p>
         )}
       </div>
 
@@ -196,13 +198,13 @@ const SessionDetail: React.FC<Props> = ({
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <FileText className="w-4 h-4" />
-            <h3 className="font-semibold text-gray-900">參考資料 ({session.references.length + byType.reference.length})</h3>
+            <h3 className="font-semibold text-gray-900">{t('interaction.reference')} ({session.references.length + byType.reference.length})</h3>
           </div>
           {onAddReference && (
             <button
               onClick={onAddReference}
               className="inline-flex items-center justify-center w-8 h-8 bg-green-600 text-white rounded hover:bg-green-700"
-              title="新增參考資料"
+              title={t('modal.newReference')}
             >
               <Plus className="w-4 h-4" />
             </button>
@@ -248,7 +250,7 @@ const SessionDetail: React.FC<Props> = ({
             ))}
           </ul>
         ) : (
-          <p className="text-gray-500 text-sm">暫無參考資料</p>
+          <p className="text-gray-500 text-sm">{t('interaction.noContent')}</p>
         )}
       </div>
 
@@ -258,13 +260,13 @@ const SessionDetail: React.FC<Props> = ({
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <MessageSquare className="w-4 h-4" />
-              <h3 className="font-semibold">提問 ({byType.question.length})</h3>
+              <h3 className="font-semibold">{t('interaction.question')} ({byType.question.length})</h3>
             </div>
             {onAddQuestion && (
               <button
                 onClick={onAddQuestion}
                 className="inline-flex items-center justify-center w-6 h-6 bg-orange-600 text-white rounded hover:bg-orange-700"
-                title="新增提問"
+                title={t('modal.newQuestion')}
               >
                 <Plus className="w-3 h-3" />
               </button>
@@ -304,7 +306,7 @@ const SessionDetail: React.FC<Props> = ({
               ))}
             </ul>
           ) : (
-            <p className="text-gray-500 text-sm">暫無提問</p>
+            <p className="text-gray-500 text-sm">{t('interaction.noContent')}</p>
           )}
         </section>
 
@@ -312,13 +314,13 @@ const SessionDetail: React.FC<Props> = ({
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Lightbulb className="w-4 h-4" />
-              <h3 className="font-semibold">本週心得 ({byType.weeklyInsight.length})</h3>
+              <h3 className="font-semibold">{t('interaction.weeklyInsight')} ({byType.weeklyInsight.length})</h3>
             </div>
             {onAddInsight && (
               <button
                 onClick={onAddInsight}
                 className="inline-flex items-center justify-center w-6 h-6 bg-yellow-600 text-white rounded hover:bg-yellow-700"
-                title="新增本週心得"
+                title={t('modal.newInsight')}
               >
                 <Plus className="w-3 h-3" />
               </button>
@@ -358,7 +360,7 @@ const SessionDetail: React.FC<Props> = ({
               ))}
             </ul>
           ) : (
-            <p className="text-gray-500 text-sm">暫無本週心得</p>
+            <p className="text-gray-500 text-sm">{t('interaction.noContent')}</p>
           )}
         </section>
 
@@ -366,13 +368,13 @@ const SessionDetail: React.FC<Props> = ({
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Heart className="w-4 h-4" />
-              <h3 className="font-semibold">對分享者建議 ({byType.speakerFeedback.length})</h3>
+              <h3 className="font-semibold">{t('interaction.speakerFeedback')} ({byType.speakerFeedback.length})</h3>
             </div>
             {onAddSpeakerFeedback && (
               <button
                 onClick={onAddSpeakerFeedback}
                 className="inline-flex items-center justify-center w-6 h-6 bg-red-600 text-white rounded hover:bg-red-700"
-                title="新增對分享者建議"
+                title={t('modal.newFeedback')}
               >
                 <Plus className="w-3 h-3" />
               </button>
@@ -412,7 +414,7 @@ const SessionDetail: React.FC<Props> = ({
               ))}
             </ul>
           ) : (
-            <p className="text-gray-500 text-sm">暫無對分享者建議</p>
+            <p className="text-gray-500 text-sm">{t('interaction.noContent')}</p>
           )}
         </section>
 
@@ -519,7 +521,7 @@ const SessionDetail: React.FC<Props> = ({
             <div className="mt-4 p-3 bg-blue-50 rounded text-sm">
               <div className="font-medium text-blue-800 mb-1">出席統計</div>
               <div className="text-blue-700">
-                出席：{session.attendees?.length || 0} 人 / 
+                {t('session.attendees')}: {session.attendees?.length || 0} / 
                 總成員：{topic.attendees.length} 人 
                 ({Math.round(((session.attendees?.length || 0) / topic.attendees.length) * 100)}%)
               </div>

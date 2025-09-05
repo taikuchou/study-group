@@ -4,6 +4,7 @@ import {
   ChevronDown, ChevronRight, X
 } from 'lucide-react';
 import type { User, Topic, Interaction } from '../types';
+import { useTranslation } from '../context/LanguageContext';
 
 type Session = Topic['sessions'][number];
 
@@ -38,6 +39,7 @@ const TopicList: React.FC<Props> = ({
   currentUserRole,
   onNewTopic, onNewSession, onOpenSession, onEditTopic, onDeleteTopic
 }) => {
+  const { t } = useTranslation();
   const [showAttendeesModal, setShowAttendeesModal] = useState<Session | null>(null);
   const [showTopicMembersModal, setShowTopicMembersModal] = useState<Topic | null>(null);
 
@@ -65,7 +67,7 @@ const TopicList: React.FC<Props> = ({
           <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
           <input
             type="text"
-            placeholder="搜尋主題、關鍵字、大綱..."
+            placeholder={t('topic.search')}
             className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             value={searchQuery}
             onChange={(e) => onSearch(e.target.value)}
@@ -75,7 +77,7 @@ const TopicList: React.FC<Props> = ({
           <button
             className="bg-blue-600 text-white w-10 h-10 rounded-lg hover:bg-blue-700 flex items-center justify-center"
             onClick={onNewTopic}
-            title="新增主題"
+            title={t('topic.newTopic')}
           >
             <Plus className="w-4 h-4" />
           </button>
@@ -99,7 +101,7 @@ const TopicList: React.FC<Props> = ({
                   </button>
                   <h3 className="text-xl font-semibold text-gray-900">{topic.title}</h3>
                   <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
-                    {topic.intervalType === 'WEEKLY' ? '每週' : '隔週'}
+                    {topic.intervalType === 'WEEKLY' ? t('topic.weekly') : t('topic.biweekly')}
                   </span>
                 </div>
 
@@ -126,7 +128,7 @@ const TopicList: React.FC<Props> = ({
                     }}
                   >
                     <Users className="w-4 h-4" />
-                    {topic.attendees.length} 位成員
+                    {topic.attendees.length} {t('topic.members')}
                   </button>
                 </div>
               </div>
@@ -147,12 +149,12 @@ const TopicList: React.FC<Props> = ({
             {expandedTopicIds.has(topic.id) && (
               <div className="mt-4 pt-4 border-t">
                 <div className="flex justify-between items-center mb-3">
-                  <h4 className="font-medium text-gray-900">場次列表</h4>
+                  <h4 className="font-medium text-gray-900">{t('topic.sessions')}</h4>
                   {currentUserRole === 'admin' && (
                     <button
                       className="text-blue-600 hover:text-blue-700 w-6 h-6 flex items-center justify-center rounded"
                       onClick={() => onNewSession?.(topic)}
-                      title="新增場次"
+                      title={t('topic.newSession')}
                     >
                       <Plus className="w-3 h-3" />
                     </button>
@@ -173,7 +175,7 @@ const TopicList: React.FC<Props> = ({
                         </div>
                       </div>
                       <div className="flex items-center gap-3 text-sm text-gray-500">
-                        <span>{getSessionInteractions(session.id).length} 個互動</span>
+                        <span>{getSessionInteractions(session.id).length} {t('topic.interactions')}</span>
                         <button
                           className="flex items-center gap-1 hover:text-blue-600 transition-colors"
                           onClick={(e) => {
@@ -182,7 +184,7 @@ const TopicList: React.FC<Props> = ({
                           }}
                         >
                           <Users className="w-3 h-3" />
-                          {session.attendees?.length || 0} 人出席
+                          {session.attendees?.length || 0} {t('topic.attendees')}
                         </button>
                       </div>
                     </div>
@@ -199,7 +201,7 @@ const TopicList: React.FC<Props> = ({
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 max-h-96 overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">主題成員</h3>
+              <h3 className="text-lg font-semibold text-gray-900">{t('modal.topicMembers')}</h3>
               <button
                 onClick={() => setShowTopicMembersModal(null)}
                 className="text-gray-400 hover:text-gray-600"
@@ -218,7 +220,7 @@ const TopicList: React.FC<Props> = ({
             {showTopicMembersModal.attendees && showTopicMembersModal.attendees.length > 0 ? (
               <div className="space-y-2">
                 <div className="font-medium text-gray-700 mb-3">
-                  共 {showTopicMembersModal.attendees.length} 位成員：
+                  {t('modal.totalMembers', { count: showTopicMembersModal.attendees.length })}
                 </div>
                 {showTopicMembersModal.attendees.map(attendeeId => (
                   <div key={attendeeId} className="flex items-center gap-3 p-2 bg-gray-50 rounded">
@@ -232,7 +234,7 @@ const TopicList: React.FC<Props> = ({
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500 text-center py-4">暫無成員資料</p>
+              <p className="text-gray-500 text-center py-4">{t('modal.noMembers')}</p>
             )}
 
             <div className="mt-6 flex justify-end">
@@ -240,7 +242,7 @@ const TopicList: React.FC<Props> = ({
                 onClick={() => setShowTopicMembersModal(null)}
                 className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
               >
-                關閉
+                {t('form.close')}
               </button>
             </div>
           </div>
@@ -252,7 +254,7 @@ const TopicList: React.FC<Props> = ({
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 max-h-96 overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">場次出席者</h3>
+              <h3 className="text-lg font-semibold text-gray-900">{t('modal.sessionAttendees')}</h3>
               <button
                 onClick={() => setShowAttendeesModal(null)}
                 className="text-gray-400 hover:text-gray-600"
@@ -269,7 +271,7 @@ const TopicList: React.FC<Props> = ({
             {showAttendeesModal.attendees && showAttendeesModal.attendees.length > 0 ? (
               <div className="space-y-2">
                 <div className="font-medium text-gray-700 mb-3">
-                  共 {showAttendeesModal.attendees.length} 位出席者：
+                  {t('modal.totalAttendees', { count: showAttendeesModal.attendees.length })}
                 </div>
                 {showAttendeesModal.attendees.map(attendeeId => (
                   <div key={attendeeId} className="flex items-center gap-3 p-2 bg-gray-50 rounded">
@@ -283,7 +285,7 @@ const TopicList: React.FC<Props> = ({
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500 text-center py-4">暫無出席者資料</p>
+              <p className="text-gray-500 text-center py-4">{t('modal.noAttendees')}</p>
             )}
 
             <div className="mt-6 flex justify-end">
@@ -291,7 +293,7 @@ const TopicList: React.FC<Props> = ({
                 onClick={() => setShowAttendeesModal(null)}
                 className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
               >
-                關閉
+                {t('form.close')}
               </button>
             </div>
           </div>

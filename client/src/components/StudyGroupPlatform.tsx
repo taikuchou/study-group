@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Users, Calendar, BookOpen, MessageSquare, Link, FileText, 
   Heart, Lightbulb, Plus, Edit, Trash2, Search, Filter,
-  ChevronDown, ChevronRight, Settings, Shield, User as UserIcon, RefreshCw
+  ChevronDown, ChevronRight, Settings, Shield, User as UserIcon, RefreshCw, Globe
 } from 'lucide-react';
   import type { User, Topic, Interaction } from '../types';
   // import { mockUsers, mockTopics, mockInteractions } from '../data/mockData';
@@ -10,6 +10,8 @@ import TopicList from './TopicList';
 import SessionDetail from './SessionDetail';
 import UserManagement from './UserManagement';
 import { useData } from '../context/DataContext';
+import { useLanguage, useTranslation } from '../context/LanguageContext';
+import { Language, languageNames } from '../locales';
 const StudyGroupPlatform = () => {
   // 模擬數據狀態
   // const [currentUser, setCurrentUser] = useState({
@@ -32,9 +34,14 @@ const StudyGroupPlatform = () => {
   const [editingInteraction, setEditingInteraction] = useState(null);
   const [showUserSwitcher, setShowUserSwitcher] = useState(false);
   const [showDataSourceSwitcher, setShowDataSourceSwitcher] = useState(false);
+  const [showLanguageSwitcher, setShowLanguageSwitcher] = useState(false);
 
   // 模擬數據
   const { currentUser, setCurrentUser, users, topics, interactions, loading, error, reload, createUser, updateUser, deleteUser, createTopic, updateTopic, deleteTopic, createInteraction, updateInteraction, deleteInteraction, source, setSource } = useData();
+  
+  // 語言
+  const { language, setLanguage } = useLanguage();
+  const { t } = useTranslation();
 
   // 點擊外部關閉下拉選單
   useEffect(() => {
@@ -45,11 +52,14 @@ const StudyGroupPlatform = () => {
       if (showDataSourceSwitcher && !event.target.closest('.data-source-switcher')) {
         setShowDataSourceSwitcher(false);
       }
+      if (showLanguageSwitcher && !event.target.closest('.language-switcher')) {
+        setShowLanguageSwitcher(false);
+      }
     };
     
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showUserSwitcher, showDataSourceSwitcher]);
+  }, [showUserSwitcher, showDataSourceSwitcher, showLanguageSwitcher]);
 
   // const [users] = useState<User[]>(mockUsers);
   // const [topics, setTopics] = useState<Topic[]>(mockTopics);
@@ -91,12 +101,12 @@ const StudyGroupPlatform = () => {
 
   const getInteractionLabel = (type) => {
     const labels = {
-      question: '提問',
-      noteLink: '筆記連結',
-      reference: '參考資料',
-      speakerFeedback: '對分享者建議',
-      weeklyInsight: '本週心得',
-      outlineSuggestion: '分享大綱建議'
+      question: t('interaction.question'),
+      noteLink: t('interaction.noteLink'),
+      reference: t('interaction.reference'),
+      speakerFeedback: t('interaction.speakerFeedback'),
+      weeklyInsight: t('interaction.weeklyInsight'),
+      outlineSuggestion: t('interaction.outlineSuggestion')
     };
     return labels[type] || type;
   };
@@ -140,7 +150,7 @@ const StudyGroupPlatform = () => {
   const handleDeleteSession = async (session) => {
     if (!selectedTopic) return;
     
-    if (window.confirm(`確定要刪除場次「${session.scope}」嗎？此操作無法復原。`)) {
+    if (window.confirm(t('session.deleteConfirm', { scope: session.scope }))) {
       const updatedTopic = {
         ...selectedTopic,
         sessions: selectedTopic.sessions.filter(s => s.id !== session.id)
@@ -157,141 +167,141 @@ const StudyGroupPlatform = () => {
 
     const modalContent = {
       newQuestion: {
-        title: '新增提問',
+        title: t('modal.newQuestion'),
         fields: [
-          { key: 'content', label: '問題內容', type: 'textarea', placeholder: '請輸入您的問題...', required: true }
+          { key: 'content', label: t('form.questionContent'), type: 'textarea', placeholder: t('form.questionPlaceholder'), required: true }
         ]
       },
       newNoteLink: {
-        title: '新增筆記連結',
+        title: t('modal.newNoteLink'),
         fields: [
-          { key: 'label', label: '連結標題', type: 'text', placeholder: '例：React Hooks 學習筆記', required: true },
-          { key: 'description', label: '描述', type: 'textarea', placeholder: '簡短描述這個連結的內容...', required: true },
-          { key: 'url', label: '連結網址', type: 'url', placeholder: 'https://...', required: true }
+          { key: 'label', label: t('form.linkTitle'), type: 'text', placeholder: t('form.linkTitlePlaceholder'), required: true },
+          { key: 'description', label: t('form.description'), type: 'textarea', placeholder: t('form.descriptionPlaceholder'), required: true },
+          { key: 'url', label: t('form.linkUrl'), type: 'url', placeholder: t('form.linkUrlPlaceholder'), required: true }
         ]
       },
       newInsight: {
-        title: '新增本週心得',
+        title: t('modal.newInsight'),
         fields: [
-          { key: 'content', label: '心得內容', type: 'textarea', placeholder: '分享您本週的學習心得...', required: true }
+          { key: 'content', label: t('form.insightContent'), type: 'textarea', placeholder: t('form.insightPlaceholder'), required: true }
         ]
       },
       newFeedback: {
-        title: '對分享者建議',
+        title: t('modal.newFeedback'),
         fields: [
-          { key: 'content', label: '建議內容', type: 'textarea', placeholder: '給分享者的建議或回饋...', required: true }
+          { key: 'content', label: t('form.feedbackContent'), type: 'textarea', placeholder: t('form.feedbackPlaceholder'), required: true }
         ]
       },
       newReference: {
-        title: '新增參考資料',
+        title: t('modal.newReference'),
         fields: [
-          { key: 'content', label: '參考資料', type: 'textarea', placeholder: '請輸入參考資料內容或連結...', required: true }
+          { key: 'content', label: t('form.referenceContent'), type: 'textarea', placeholder: t('form.referencePlaceholder'), required: true }
         ]
       },
       newTopic: {
-        title: '新增主題',
+        title: t('modal.newTopic'),
         fields: [
-          { key: 'title', label: '主題標題', type: 'text', placeholder: '請輸入主題標題', required: true },
-          { key: 'startDate', label: '開始日期', type: 'date', required: true },
-          { key: 'endDate', label: '結束日期', type: 'date', required: true },
-          { key: 'intervalType', label: '間隔類型', type: 'select', options: [
-            { value: 'WEEKLY', label: '每週' },
-            { value: 'BIWEEKLY', label: '隔週' }
+          { key: 'title', label: t('form.title'), type: 'text', placeholder: t('form.titlePlaceholder'), required: true },
+          { key: 'startDate', label: t('form.startDate'), type: 'date', required: true },
+          { key: 'endDate', label: t('form.endDate'), type: 'date', required: true },
+          { key: 'intervalType', label: t('form.intervalType'), type: 'select', options: [
+            { value: 'WEEKLY', label: t('topic.weekly') },
+            { value: 'BIWEEKLY', label: t('topic.biweekly') }
           ], required: true },
-          { key: 'outline', label: '主題大綱', type: 'textarea', placeholder: '請描述主題內容大綱...', required: true },
-          { key: 'keywords', label: '關鍵字', type: 'text', placeholder: '用逗號分隔，例：React, JavaScript, Frontend' },
-          { key: 'referenceUrls', label: '參考連結', type: 'textarea', placeholder: '每行一個連結\nhttps://example1.com\nhttps://example2.com' },
-          { key: 'attendees', label: '參與者', type: 'multiselect', options: users.map(u => ({ value: u.id, label: u.name })), required: true }
+          { key: 'outline', label: t('form.outline'), type: 'textarea', placeholder: t('form.outlinePlaceholder'), required: true },
+          { key: 'keywords', label: t('form.keywords'), type: 'text', placeholder: t('form.keywordsPlaceholder') },
+          { key: 'referenceUrls', label: t('form.referenceUrls'), type: 'textarea', placeholder: t('form.referenceUrlsPlaceholder') },
+          { key: 'attendees', label: t('form.attendees'), type: 'multiselect', options: users.map(u => ({ value: u.id, label: u.name })), required: true }
         ]
       },
       editTopic: {
-        title: '編輯主題',
+        title: t('modal.editTopic'),
         fields: [
-          { key: 'title', label: '主題標題', type: 'text', placeholder: '請輸入主題標題', required: true },
-          { key: 'startDate', label: '開始日期', type: 'date', required: true },
-          { key: 'endDate', label: '結束日期', type: 'date', required: true },
-          { key: 'intervalType', label: '間隔類型', type: 'select', options: [
-            { value: 'WEEKLY', label: '每週' },
-            { value: 'BIWEEKLY', label: '隔週' }
+          { key: 'title', label: t('form.title'), type: 'text', placeholder: t('form.titlePlaceholder'), required: true },
+          { key: 'startDate', label: t('form.startDate'), type: 'date', required: true },
+          { key: 'endDate', label: t('form.endDate'), type: 'date', required: true },
+          { key: 'intervalType', label: t('form.intervalType'), type: 'select', options: [
+            { value: 'WEEKLY', label: t('topic.weekly') },
+            { value: 'BIWEEKLY', label: t('topic.biweekly') }
           ], required: true },
-          { key: 'outline', label: '主題大綱', type: 'textarea', placeholder: '請描述主題內容大綱...', required: true },
-          { key: 'keywords', label: '關鍵字', type: 'text', placeholder: '用逗號分隔，例：React, JavaScript, Frontend' },
-          { key: 'referenceUrls', label: '參考連結', type: 'textarea', placeholder: '每行一個連結\nhttps://example1.com\nhttps://example2.com' },
-          { key: 'attendees', label: '參與者', type: 'multiselect', options: users.map(u => ({ value: u.id, label: u.name })), required: true }
+          { key: 'outline', label: t('form.outline'), type: 'textarea', placeholder: t('form.outlinePlaceholder'), required: true },
+          { key: 'keywords', label: t('form.keywords'), type: 'text', placeholder: t('form.keywordsPlaceholder') },
+          { key: 'referenceUrls', label: t('form.referenceUrls'), type: 'textarea', placeholder: t('form.referenceUrlsPlaceholder') },
+          { key: 'attendees', label: t('form.attendees'), type: 'multiselect', options: users.map(u => ({ value: u.id, label: u.name })), required: true }
         ]
       },
       newSession: {
-        title: '新增場次',
+        title: t('modal.newSession'),
         fields: [
-          { key: 'scope', label: '場次主題', type: 'text', placeholder: '請輸入場次主題或範圍', required: true },
-          { key: 'startDateTime', label: '開始時間', type: 'datetime-local', required: true },
-          { key: 'presenterId', label: '分享者', type: 'select', options: users.map(u => ({ value: u.id, label: u.name })), required: true },
-          { key: 'outline', label: '場次大綱', type: 'textarea', placeholder: '請描述本場次的詳細內容...', required: true },
-          { key: 'attendees', label: '出席者', type: 'multiselect', options: users.map(u => ({ value: u.id, label: u.name })), required: false }
+          { key: 'scope', label: t('form.sessionScope'), type: 'text', placeholder: t('form.sessionScopePlaceholder'), required: true },
+          { key: 'startDateTime', label: t('form.startDateTime'), type: 'datetime-local', required: true },
+          { key: 'presenterId', label: t('form.presenter'), type: 'select', options: users.map(u => ({ value: u.id, label: u.name })), required: true },
+          { key: 'outline', label: t('form.sessionOutline'), type: 'textarea', placeholder: t('form.sessionOutlinePlaceholder'), required: true },
+          { key: 'attendees', label: t('form.sessionAttendees'), type: 'multiselect', options: users.map(u => ({ value: u.id, label: u.name })), required: false }
         ]
       },
       editSession: {
-        title: '編輯場次',
+        title: t('modal.editSession'),
         fields: [
-          { key: 'scope', label: '場次主題', type: 'text', placeholder: '請輸入場次主題或範圍', required: true },
-          { key: 'startDateTime', label: '開始時間', type: 'datetime-local', required: true },
-          { key: 'presenterId', label: '分享者', type: 'select', options: users.map(u => ({ value: u.id, label: u.name })), required: true },
-          { key: 'outline', label: '場次大綱', type: 'textarea', placeholder: '請描述本場次的詳細內容...', required: true },
-          { key: 'attendees', label: '出席者', type: 'multiselect', options: users.map(u => ({ value: u.id, label: u.name })), required: false }
+          { key: 'scope', label: t('form.sessionScope'), type: 'text', placeholder: t('form.sessionScopePlaceholder'), required: true },
+          { key: 'startDateTime', label: t('form.startDateTime'), type: 'datetime-local', required: true },
+          { key: 'presenterId', label: t('form.presenter'), type: 'select', options: users.map(u => ({ value: u.id, label: u.name })), required: true },
+          { key: 'outline', label: t('form.sessionOutline'), type: 'textarea', placeholder: t('form.sessionOutlinePlaceholder'), required: true },
+          { key: 'attendees', label: t('form.sessionAttendees'), type: 'multiselect', options: users.map(u => ({ value: u.id, label: u.name })), required: false }
         ]
       },
       newUser: {
-        title: '新增使用者',
+        title: t('modal.newUser'),
         fields: [
-          { key: 'name', label: '使用者姓名', type: 'text', placeholder: '請輸入使用者姓名', required: true },
-          { key: 'email', label: '電子郵件', type: 'email', placeholder: '請輸入電子郵件地址', required: true },
-          { key: 'role', label: '使用者角色', type: 'select', options: [
-            { value: 'user', label: '一般使用者' },
-            { value: 'admin', label: '管理員' }
+          { key: 'name', label: t('form.userName'), type: 'text', placeholder: t('form.userNamePlaceholder'), required: true },
+          { key: 'email', label: t('form.userEmail'), type: 'email', placeholder: t('form.userEmailPlaceholder'), required: true },
+          { key: 'role', label: t('form.userRole'), type: 'select', options: [
+            { value: 'user', label: t('form.regularUser') },
+            { value: 'admin', label: t('form.adminUser') }
           ], required: true }
         ]
       },
       editUser: {
-        title: '編輯使用者',
+        title: t('modal.editUser'),
         fields: [
-          { key: 'name', label: '使用者姓名', type: 'text', placeholder: '請輸入使用者姓名', required: true },
-          { key: 'email', label: '電子郵件', type: 'email', placeholder: '請輸入電子郵件地址', required: true },
-          { key: 'role', label: '使用者角色', type: 'select', options: [
-            { value: 'user', label: '一般使用者' },
-            { value: 'admin', label: '管理員' }
+          { key: 'name', label: t('form.userName'), type: 'text', placeholder: t('form.userNamePlaceholder'), required: true },
+          { key: 'email', label: t('form.userEmail'), type: 'email', placeholder: t('form.userEmailPlaceholder'), required: true },
+          { key: 'role', label: t('form.userRole'), type: 'select', options: [
+            { value: 'user', label: t('form.regularUser') },
+            { value: 'admin', label: t('form.adminUser') }
           ], required: true }
         ]
       },
       editQuestion: {
-        title: '編輯提問',
+        title: t('modal.editQuestion'),
         fields: [
-          { key: 'content', label: '問題內容', type: 'textarea', placeholder: '請輸入您的問題...', required: true }
+          { key: 'content', label: t('form.questionContent'), type: 'textarea', placeholder: t('form.questionPlaceholder'), required: true }
         ]
       },
       editNoteLink: {
-        title: '編輯筆記連結',
+        title: t('modal.editNoteLink'),
         fields: [
-          { key: 'label', label: '連結標題', type: 'text', placeholder: '例：React Hooks 學習筆記', required: true },
-          { key: 'description', label: '描述', type: 'textarea', placeholder: '簡短描述這個連結的內容...', required: true },
-          { key: 'url', label: '連結網址', type: 'url', placeholder: 'https://...', required: true }
+          { key: 'label', label: t('form.linkTitle'), type: 'text', placeholder: t('form.linkTitlePlaceholder'), required: true },
+          { key: 'description', label: t('form.description'), type: 'textarea', placeholder: t('form.descriptionPlaceholder'), required: true },
+          { key: 'url', label: t('form.linkUrl'), type: 'url', placeholder: t('form.linkUrlPlaceholder'), required: true }
         ]
       },
       editInsight: {
-        title: '編輯本週心得',
+        title: t('modal.editInsight'),
         fields: [
-          { key: 'content', label: '心得內容', type: 'textarea', placeholder: '分享您本週的學習心得...', required: true }
+          { key: 'content', label: t('form.insightContent'), type: 'textarea', placeholder: t('form.insightPlaceholder'), required: true }
         ]
       },
       editFeedback: {
-        title: '編輯對分享者建議',
+        title: t('modal.editFeedback'),
         fields: [
-          { key: 'content', label: '建議內容', type: 'textarea', placeholder: '給分享者的建議或回饋...', required: true }
+          { key: 'content', label: t('form.feedbackContent'), type: 'textarea', placeholder: t('form.feedbackPlaceholder'), required: true }
         ]
       },
       editReference: {
-        title: '編輯參考資料',
+        title: t('modal.editReference'),
         fields: [
-          { key: 'content', label: '參考資料', type: 'textarea', placeholder: '請輸入參考資料內容或連結...', required: true }
+          { key: 'content', label: t('form.referenceContent'), type: 'textarea', placeholder: t('form.referencePlaceholder'), required: true }
         ]
       }
     };
@@ -522,7 +532,7 @@ const StudyGroupPlatform = () => {
                       required={field.required}
                       defaultValue={getDefaultValue(field)}
                     >
-                      <option value="">請選擇...</option>
+                      <option value="">{t('form.pleaseSelect')}</option>
                       {field.options?.map(option => (
                         <option key={option.value} value={option.value}>
                           {option.label}
@@ -566,7 +576,7 @@ const StudyGroupPlatform = () => {
                 type="submit"
                 className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700"
               >
-                {showModal === 'editTopic' || showModal === 'editSession' || showModal === 'editUser' || showModal === 'editQuestion' || showModal === 'editNoteLink' || showModal === 'editInsight' || showModal === 'editFeedback' || showModal === 'editReference' ? '確認修改' : '確認新增'}
+                {showModal === 'editTopic' || showModal === 'editSession' || showModal === 'editUser' || showModal === 'editQuestion' || showModal === 'editNoteLink' || showModal === 'editInsight' || showModal === 'editFeedback' || showModal === 'editReference' ? t('form.confirmEdit') : t('form.confirm')}
               </button>
               <button
                 type="button"
@@ -580,7 +590,7 @@ const StudyGroupPlatform = () => {
                   setEditingInteraction(null);
                 }}
               >
-                取消
+                {t('form.cancel')}
               </button>
             </div>
           </form>
@@ -597,19 +607,57 @@ const StudyGroupPlatform = () => {
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <BookOpen className="w-8 h-8 text-blue-600" />
-              <span className="ml-2 text-xl font-semibold text-gray-900">共學平台</span>
+              <span className="ml-2 text-xl font-semibold text-gray-900">{t('nav.title')}</span>
             </div>
             
             <div className="flex items-center space-x-4">
+              {/* 語言切換下拉選單 */}
+              <div className="relative language-switcher">
+                <button
+                  onClick={() => setShowLanguageSwitcher(!showLanguageSwitcher)}
+                  className="flex items-center gap-2 px-3 py-2 text-sm bg-purple-100 text-purple-800 rounded-lg hover:bg-purple-200 border border-purple-300"
+                  title={t('nav.language')}
+                >
+                  <Globe className="w-4 h-4" />
+                  <span className="hidden sm:inline">{languageNames[language]}</span>
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+                
+                {showLanguageSwitcher && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-50">
+                    <div className="py-1">
+                      <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase border-b">
+                        {t('nav.language')}
+                      </div>
+                      {(Object.keys(languageNames) as Language[]).map(lang => (
+                        <button
+                          key={lang}
+                          onClick={() => {
+                            setLanguage(lang);
+                            setShowLanguageSwitcher(false);
+                          }}
+                          className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 flex items-center gap-2 ${
+                            language === lang ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                          }`}
+                        >
+                          <div className={`w-2 h-2 rounded-full ${language === lang ? 'bg-blue-500' : 'bg-gray-300'}`}></div>
+                          {languageNames[lang]}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* 數據源切換下拉選單（測試用） */}
               <div className="relative data-source-switcher">
                 <button
                   onClick={() => setShowDataSourceSwitcher(!showDataSourceSwitcher)}
                   className="flex items-center gap-2 px-3 py-2 text-sm bg-green-100 text-green-800 rounded-lg hover:bg-green-200 border border-green-300"
-                  title="切換數據源"
+                  title={t('nav.dataSource')}
                 >
                   <Settings className="w-4 h-4" />
-                  <span className="hidden sm:inline">{source === 'mock' ? 'Mock' : 'API'}</span>
+                  <span className="hidden sm:inline">{source === 'mock' ? t('nav.mockData') : t('nav.apiData')}</span>
                   <ChevronDown className="w-3 h-3" />
                 </button>
                 
@@ -617,7 +665,7 @@ const StudyGroupPlatform = () => {
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-50">
                     <div className="py-1">
                       <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase border-b">
-                        數據源
+                        {t('nav.dataSource')}
                       </div>
                       <button
                         onClick={() => {
@@ -629,7 +677,7 @@ const StudyGroupPlatform = () => {
                         }`}
                       >
                         <div className={`w-2 h-2 rounded-full ${source === 'mock' ? 'bg-blue-500' : 'bg-gray-300'}`}></div>
-                        Mock 數據
+                        {t('nav.mockData')}
                       </button>
                       <button
                         onClick={() => {
@@ -641,7 +689,7 @@ const StudyGroupPlatform = () => {
                         }`}
                       >
                         <div className={`w-2 h-2 rounded-full ${source === 'api' ? 'bg-blue-500' : 'bg-gray-300'}`}></div>
-                        API 數據
+                        {t('nav.apiData')}
                       </button>
                     </div>
                   </div>
@@ -653,10 +701,10 @@ const StudyGroupPlatform = () => {
                 <button
                   onClick={() => setShowUserSwitcher(!showUserSwitcher)}
                   className="flex items-center gap-2 px-3 py-2 text-sm bg-yellow-100 text-yellow-800 rounded-lg hover:bg-yellow-200 border border-yellow-300"
-                  title="測試用：切換使用者身份"
+                  title={t('nav.switchIdentity')}
                 >
                   <RefreshCw className="w-4 h-4" />
-                  <span className="hidden sm:inline">測試切換</span>
+                  <span className="hidden sm:inline">{t('nav.testSwitch')}</span>
                   <ChevronDown className="w-3 h-3" />
                 </button>
                 
@@ -664,7 +712,7 @@ const StudyGroupPlatform = () => {
                   <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border z-50">
                     <div className="py-1">
                       <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase border-b">
-                        切換身份 (測試用)
+                        {t('nav.switchIdentity')}
                       </div>
                       {users.map(user => (
                         <button
@@ -684,7 +732,7 @@ const StudyGroupPlatform = () => {
                           <div className="flex-1 text-left">
                             <div className="font-medium">{user.name}</div>
                             <div className="text-xs text-gray-500">
-                              {user.role === 'admin' ? '管理者' : '使用者'} • {user.email}
+                              {user.role === 'admin' ? t('nav.admin') : t('nav.user')} • {user.email}
                             </div>
                           </div>
                           {currentUser.id === user.id && (
@@ -708,7 +756,7 @@ const StudyGroupPlatform = () => {
                 </div>
                 <div className="flex flex-col">
                   <span className="text-sm font-medium text-gray-700">{currentUser.name}</span>
-                  <span className="text-xs text-gray-500">{currentUser.role === 'admin' ? '管理者' : '使用者'}</span>
+                  <span className="text-xs text-gray-500">{currentUser.role === 'admin' ? t('nav.admin') : t('nav.user')}</span>
                 </div>
               </div>
             </div>
@@ -728,7 +776,7 @@ const StudyGroupPlatform = () => {
             }`}
           >
             <BookOpen className="w-4 h-4 inline mr-2" />
-            共學主題
+            {t('nav.topics')}
           </button>
           
           <button
@@ -740,7 +788,7 @@ const StudyGroupPlatform = () => {
             }`}
           >
             <Calendar className="w-4 h-4 inline mr-2" />
-            場次詳情
+            {t('nav.session')}
           </button>
           
           {currentUser.role === 'admin' && (
@@ -753,7 +801,7 @@ const StudyGroupPlatform = () => {
               }`}
             >
               <Users className="w-4 h-4 inline mr-2" />
-              使用者管理
+              {t('nav.users')}
             </button>
           )}
         </div>
@@ -784,9 +832,9 @@ const StudyGroupPlatform = () => {
       setEditingTopic(t);
       setShowModal('editTopic');
     }}
-    onDeleteTopic={(t) => {
-      if (window.confirm(`確定要刪除主題「${t.title}」嗎？此操作無法復原。`)) {
-        deleteTopic(t.id);
+    onDeleteTopic={(topic) => {
+      if (window.confirm(t('topic.deleteConfirm', { title: topic.title }))) {
+        deleteTopic(topic.id);
       }
     }}
   />
@@ -825,7 +873,7 @@ const StudyGroupPlatform = () => {
       setShowModal(modalType);
     }}
     onDeleteInteraction={async (interaction) => {
-      if (window.confirm(`確定要刪除這個${getInteractionLabel(interaction.type)}嗎？此操作無法復原。`)) {
+      if (window.confirm(t('interaction.deleteConfirm', { type: getInteractionLabel(interaction.type) }))) {
         await deleteInteraction(interaction.id);
       }
     }}
@@ -842,7 +890,7 @@ const StudyGroupPlatform = () => {
       setShowModal('editUser');
     }}
     onDeleteUser={(u) => {
-      if (window.confirm(`確定要刪除使用者「${u.name}」嗎？此操作無法復原。`)) {
+      if (window.confirm(t('user.deleteConfirm', { name: u.name }))) {
         deleteUser(u.id);
       }
     }}

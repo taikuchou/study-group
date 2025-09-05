@@ -9,23 +9,6 @@ import { canPerform, type Action, type Ownable } from './Ownership';
 
 export type DataSource = 'api' | 'mock';
 
-// function resolveDefaultSource(): DataSource {
-//   //const explicit = (process.env.REACT_APP_DATA_SOURCE ?? '').toLowerCase();
-//   //if (explicit === 'api' || explicit === 'mock') return explicit as DataSource;
-//   // const explicit = (process.env.REACT_APP_DATA_SOURCE ?? '').toLowerCase();
-//   // if (explicit === 'api' || explicit === 'mock') return explicit as DataSource;
-//   const useMock = true;
-//   console.log("resolveDefaultSource",useMock)
-//   return useMock ? 'mock' : 'api';
-// }
-
-// function serviceFrom(source: DataSource): DataService {
-//   // const explicit = (process.env.REACT_APP_DATA_SOURCE ?? '').toLowerCase();
-//   // if (explicit === 'api' || explicit === 'mock') return explicit as DataSource;
-//   console.log(source)
-//   source = 'mock'
-//   return source === 'api' ? new ApiDataService() : new MockDataService();
-// }
 function resolveDefaultSource(): DataSource {
   const fromEnv = (import.meta.env.VITE_DATA_SOURCE ?? '').toLowerCase();
   console.log('resolveDefaultSource:', fromEnv);

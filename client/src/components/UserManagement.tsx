@@ -1,6 +1,7 @@
 import React from 'react';
 import { Plus, Edit, Trash2, Shield, User as UserIcon } from 'lucide-react';
 import type { User } from '../types';
+import { useTranslation } from '../context/LanguageContext';
 
 type Props = {
   users: User[];
@@ -17,16 +18,17 @@ const UserManagement: React.FC<Props> = ({
   onEditUser,
   onDeleteUser,
 }) => {
+  const { t } = useTranslation();
   return (
     <div className="space-y-6">
       {/* 標題列 */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">使用者管理</h2>
+        <h2 className="text-2xl font-bold text-gray-900">{t('user.management')}</h2>
         {currentUserRole === 'admin' && (
           <button
             className="bg-blue-600 text-white w-10 h-10 rounded-lg hover:bg-blue-700 flex items-center justify-center"
             onClick={onCreateUser}
-            title="新增使用者"
+            title={t('user.newUser')}
           >
             <Plus className="w-4 h-4" />
           </button>
@@ -39,11 +41,11 @@ const UserManagement: React.FC<Props> = ({
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">姓名</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">角色</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">建立日期</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">操作</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('user.name')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('user.email')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('user.role')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('user.createdAt')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('user.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -70,11 +72,11 @@ const UserManagement: React.FC<Props> = ({
                     >
                       {user.role === 'admin' ? (
                         <>
-                          <Shield className="w-3 h-3 mr-1" /> 管理者
+                          <Shield className="w-3 h-3 mr-1" /> {t('nav.admin')}
                         </>
                       ) : (
                         <>
-                          <UserIcon className="w-3 h-3 mr-1" /> 使用者
+                          <UserIcon className="w-3 h-3 mr-1" /> {t('nav.user')}
                         </>
                       )}
                     </span>
@@ -101,7 +103,7 @@ const UserManagement: React.FC<Props> = ({
               {users.length === 0 && (
                 <tr>
                   <td className="px-6 py-6 text-sm text-gray-500" colSpan={5}>
-                    尚無使用者
+                    {t('user.noUsers')}
                   </td>
                 </tr>
               )}
