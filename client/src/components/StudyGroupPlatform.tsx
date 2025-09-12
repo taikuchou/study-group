@@ -10,6 +10,7 @@ import TopicList from './TopicList';
 import SessionDetail from './SessionDetail';
 // import UserManagement from './UserManagement';
 import { UserManagement, UserForm, useUsers } from '../features/users';
+import { InteractionForm } from '../features/interactions/components/InteractionForm';
 // import { SessionDetail, SessionForm, useSessions } from '../features/sessions';
 import { useData } from '../context/DataContext';
 import { useLanguage, useTranslation } from '../context/LanguageContext';
@@ -39,6 +40,7 @@ const StudyGroupPlatform = () => {
   const [showUserSwitcher, setShowUserSwitcher] = useState(false);
   const [showDataSourceSwitcher, setShowDataSourceSwitcher] = useState(false);
   const [showLanguageSwitcher, setShowLanguageSwitcher] = useState(false);
+  const [interactionModal, setInteractionModal] = useState({ open: false, type: null, editing: null });
 
   // 模擬數據
   const { currentUser, setCurrentUser, users, topics, interactions, loading, error, reload, createTopic, updateTopic, deleteTopic, createInteraction, updateInteraction, deleteInteraction, source, setSource } = useData();
@@ -863,24 +865,26 @@ const StudyGroupPlatform = () => {
       setShowModal('editSession');
     }}
     onDeleteSession={handleDeleteSession}
-    onAddNoteLink={() => setShowModal('newNoteLink')}
-    onAddReference={() => setShowModal('newReference')}
+    onAddNoteLink={() => setInteractionModal({ open: true, type: 'noteLink', editing: null })}
+    onAddReference={() => setInteractionModal({ open: true, type: 'reference', editing: null })}
     onAddQuestion={() => setShowModal('newQuestion')}
     onAddInsight={() => setShowModal('newInsight')}
     onAddSpeakerFeedback={() => setShowModal('newFeedback')}
     onEditInteraction={(interaction) => {
-      setEditingInteraction(interaction);
-      // 根據互動類型設置對應的編輯模態框
-      let modalType;
-      switch (interaction.type) {
-        case 'question': modalType = 'editQuestion'; break;
-        case 'noteLink': modalType = 'editNoteLink'; break;
-        case 'weeklyInsight': modalType = 'editInsight'; break;
-        case 'speakerFeedback': modalType = 'editFeedback'; break;
-        case 'reference': modalType = 'editReference'; break;
-        default: modalType = 'editReference'; break;
+      if (interaction.type === 'reference' || interaction.type === 'noteLink') {
+        setInteractionModal({ open: true, type: interaction.type, editing: interaction });
+      } else {
+        setEditingInteraction(interaction);
+        // 根據互動類型設置對應的編輯模態框
+        let modalType;
+        switch (interaction.type) {
+          case 'question': modalType = 'editQuestion'; break;
+          case 'weeklyInsight': modalType = 'editInsight'; break;
+          case 'speakerFeedback': modalType = 'editFeedback'; break;
+          default: modalType = 'editQuestion'; break;
+        }
+        setShowModal(modalType);
       }
-      setShowModal(modalType);
     }}
     onDeleteInteraction={async (interaction) => {
       if (window.confirm(t('interaction.deleteConfirm', { type: getInteractionLabel(interaction.type) }))) {
@@ -948,6 +952,36 @@ const StudyGroupPlatform = () => {
           }
         />
       )} */}
+      
+      {/* 互動表單 (新增參考文獻等) */}
+      <InteractionForm
+        open={interactionModal.open}
+        onClose={() => setInteractionModal({ open: false, type: null, editing: null })}
+        type={interactionModal.type}
+        initialValue={interactionModal.editing}
+        onSubmit={async (content, additionalData) => {
+          if (selectedSession && selectedTopic) {
+            if (interactionModal.editing) {
+              // 編輯現有互動
+              await updateInteraction({
+                ...interactionModal.editing,
+                content,
+                ...additionalData
+              });
+            } else {
+              // 新增互動
+              await createInteraction({
+                type: interactionModal.type,
+                sessionId: selectedSession.id,
+                authorId: currentUser.id,
+                content,
+                createdAt: new Date().toISOString(),
+                ...additionalData
+              });
+            }
+          }
+        }}
+      />
     </div>
   );
 };

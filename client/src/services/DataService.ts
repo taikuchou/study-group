@@ -1,5 +1,5 @@
 // ============== Service Interfaces ==============
-import type { User, Topic, Interaction } from '../types';
+import type { User, Topic, Session, Interaction } from '../types';
 
 export interface DataService {
   // Users
@@ -14,6 +14,13 @@ export interface DataService {
   createTopic(topic: Topic): Promise<Topic>;
   updateTopic(topic: Topic): Promise<Topic>;
   deleteTopic(id: number): Promise<void>;
+
+  // Sessions
+  listSessions(): Promise<Session[]>;
+  getSession(id: number): Promise<Session | undefined>;
+  createSession(session: Session): Promise<Session>;
+  updateSession(session: Session): Promise<Session>;
+  deleteSession(id: number): Promise<void>;
 
   // Interactions
   listInteractions(): Promise<Interaction[]>;

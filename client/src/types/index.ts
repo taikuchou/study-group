@@ -11,6 +11,15 @@ export interface User {
 
 export type IntervalType = 'WEEKLY' | 'BIWEEKLY';
 
+export type ReferenceCategory = 'web' | 'book' | 'paper';
+
+export interface ReferenceLink {
+  label: string;
+  description: string;
+  url: string;
+  category: ReferenceCategory;
+}
+
 export interface Session {
   id: number;
   topicId: number;
@@ -19,7 +28,7 @@ export interface Session {
   scope: string;
   outline: string;
   noteLinks: string[];
-  references: string[];
+  references: ReferenceLink[];
   attendees: number[]; // user ids
 }
 
@@ -71,7 +80,10 @@ export interface SpeakerFeedbackInteraction extends InteractionBase {
 
 export interface ReferenceInteraction extends InteractionBase {
   type: 'reference';
-  content: string;
+  label: string;
+  description: string;
+  url: string;
+  category: ReferenceCategory;
 }
 
 export interface OutlineSuggestionInteraction extends InteractionBase {

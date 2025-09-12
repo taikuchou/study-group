@@ -1,8 +1,8 @@
 import type { DataService } from "./DataService";
-import type { User, Topic, Interaction } from "../types";
+import type { User, Topic, Session, Interaction } from "../types";
 
 /** Minimal fetch wrapper; replace BASE_URL to match your backend. */
-const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001/api";
 
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -78,6 +78,51 @@ export class ApiDataService implements DataService {
   }
   async deleteTopic(id: number): Promise<void> {
     const res = await fetch(`${BASE_URL}/topics/${id}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`HTTP ${res.status} ${res.statusText}: ${body}`);
+    }
+  }
+
+  async listSessions(): Promise<Session[]> {
+    const res = await fetch(`${BASE_URL}/sessions`, {
+      credentials: "include",
+    });
+    return json<Session[]>(res);
+  }
+
+  async getSession(id: number): Promise<Session | undefined> {
+    const res = await fetch(`${BASE_URL}/sessions/${id}`, {
+      credentials: "include",
+    });
+    return json<Session>(res);
+  }
+
+  async createSession(session: Session): Promise<Session> {
+    const res = await fetch(`${BASE_URL}/sessions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(session),
+      credentials: "include",
+    });
+    return json<Session>(res);
+  }
+
+  async updateSession(session: Session): Promise<Session> {
+    const res = await fetch(`${BASE_URL}/sessions/${session.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(session),
+      credentials: "include",
+    });
+    return json<Session>(res);
+  }
+
+  async deleteSession(id: number): Promise<void> {
+    const res = await fetch(`${BASE_URL}/sessions/${id}`, {
       method: "DELETE",
       credentials: "include",
     });

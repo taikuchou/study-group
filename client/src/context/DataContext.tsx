@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useMemo, useState, useEffect } from 'react';
-import type { User, Topic, Interaction } from '../types';
+import type { User, Topic, Session, Interaction } from '../types';
 import type { DataService } from '../services/DataService';
 import { MockDataService } from '../services/MockDataService';
 import { ApiDataService } from '../services/ApiDataService';
@@ -25,6 +25,7 @@ type DataContextValue = {
 
   users: User[];
   topics: Topic[];
+  sessions: Session[];
   interactions: Interaction[];
 
   loading: boolean;
@@ -37,6 +38,9 @@ type DataContextValue = {
   createTopic: (t: Topic) => Promise<Topic>;
   updateTopic: (t: Topic) => Promise<Topic>;
   deleteTopic: (id: number) => Promise<void>;
+  createSession: (s: Session) => Promise<Session>;
+  updateSession: (s: Session) => Promise<Session>;
+  deleteSession: (id: number) => Promise<void>;
   createInteraction: (i: Interaction) => Promise<Interaction>;
   updateInteraction: (i: Interaction) => Promise<Interaction>;
   deleteInteraction: (id: number) => Promise<void>;
@@ -76,6 +80,7 @@ export const DataProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
 
   const [users, setUsers] = useState<User[]>([]);
   const [topics, setTopics] = useState<Topic[]>([]);
+  const [sessions, setSessions] = useState<Session[]>([]);
   const [interactions, setInteractions] = useState<Interaction[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,10 +88,10 @@ export const DataProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
   const reload = async () => {
     setLoading(true); setError(null);
     try {
-      const [u, t, inter] = await Promise.all([
-        dataService.listUsers(), dataService.listTopics(), dataService.listInteractions()
+      const [u, t, s, inter] = await Promise.all([
+        dataService.listUsers(), dataService.listTopics(), dataService.listSessions(), dataService.listInteractions()
       ]);
-      setUsers(u); setTopics(t); setInteractions(inter);
+      setUsers(u); setTopics(t); setSessions(s); setInteractions(inter);
     } catch (e: any) {
       setError(e?.message ?? 'Unknown error');
     } finally {
@@ -124,6 +129,22 @@ export const DataProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     await dataService.deleteTopic(id);
     setTopics(prev => prev.filter(x => x.id !== id));
   };
+
+  const createSession = async (s: Session) => {
+    const created = await dataService.createSession(s);
+    setSessions(prev => [...prev, created]);
+    return created;
+  };
+  const updateSession = async (s: Session) => {
+    const updated = await dataService.updateSession(s);
+    setSessions(prev => prev.map(x => (x.id === updated.id ? updated : x)));
+    return updated;
+  };
+  const deleteSession = async (id: number) => {
+    await dataService.deleteSession(id);
+    setSessions(prev => prev.filter(x => x.id !== id));
+  };
+
   const createInteraction = async (i: Interaction) => {
     const created = await dataService.createInteraction(i);
     setInteractions(prev => [...prev, created]);
@@ -148,15 +169,16 @@ export const DataProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
 
   const value: DataContextValue = useMemo(() => ({
     currentUser, setCurrentUser,
-    users, topics, interactions,
+    users, topics, sessions, interactions,
     loading, error,
     reload,
     createUser, updateUser, deleteUser,
-    createTopic, updateTopic, deleteTopic, 
+    createTopic, updateTopic, deleteTopic,
+    createSession, updateSession, deleteSession,
     createInteraction, updateInteraction, deleteInteraction,
     can, OwnershipGuard,
     source, setSource,
-  }), [currentUser, users, topics, interactions, loading, error, source]);
+  }), [currentUser, users, topics, sessions, interactions, loading, error, source]);
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 };

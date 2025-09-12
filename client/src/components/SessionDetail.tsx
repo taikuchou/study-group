@@ -3,7 +3,7 @@ import {
   Calendar, FileText, Link as LinkIcon, MessageSquare,
   Heart, Lightbulb, Edit, Trash2, User as UserIcon, ChevronLeft, Plus, Users, X, Check, X as XIcon
 } from 'lucide-react';
-import type { Topic, User, Interaction } from '../types';
+import type { Topic, User, Interaction, ReferenceLink, ReferenceCategory } from '../types';
 import { canPerformSessionAction, canPerformInteractionAction } from '../context/Ownership';
 import { useTranslation } from '../context/LanguageContext';
 
@@ -51,6 +51,24 @@ const SessionDetail: React.FC<Props> = ({
     }
   };
 
+  const getCategoryIcon = (category: ReferenceCategory) => {
+    switch (category) {
+      case 'web': return '🌐';
+      case 'book': return '📚';
+      case 'paper': return '📄';
+      default: return '📎';
+    }
+  };
+
+  const getCategoryName = (category: ReferenceCategory) => {
+    switch (category) {
+      case 'web': return t('form.referenceCategoryWeb');
+      case 'book': return t('form.referenceCategoryBook');
+      case 'paper': return t('form.referenceCategoryPaper');
+      default: return category;
+    }
+  };
+
   // Check if current user can edit/delete this session
   const canEditSession = canPerformSessionAction(currentUser, 'edit', session);
   const canDeleteSession = canPerformSessionAction(currentUser, 'delete', session);
@@ -65,6 +83,46 @@ const SessionDetail: React.FC<Props> = ({
       noteLink: interactions.filter(i => i.type === 'noteLink'),
     };
   }, [interactions]);
+
+  const groupedReferences = useMemo(() => {
+    // Combine session references and interaction references
+    const allReferences = [
+      ...session.references.map(ref => ({ ...ref, isSessionRef: true, createdAt: session.startDateTime })),
+      ...byType.reference.map((i: any) => ({ 
+        label: i.label, 
+        description: i.description, 
+        url: i.url, 
+        category: i.category || 'web',
+        isSessionRef: false,
+        createdAt: i.createdAt,
+        authorId: i.authorId,
+        id: i.id
+      }))
+    ];
+
+    // Group by category
+    const grouped: Record<ReferenceCategory, any[]> = {
+      web: [],
+      book: [],
+      paper: []
+    };
+
+    allReferences.forEach(ref => {
+      const category = ref.category || 'web';
+      if (grouped[category]) {
+        grouped[category].push(ref);
+      }
+    });
+
+    // Sort each category by creation time (newest first)
+    Object.keys(grouped).forEach(category => {
+      grouped[category as ReferenceCategory].sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+    });
+
+    return grouped;
+  }, [session.references, byType.reference, session.startDateTime]);
 
   return (
     <div className="space-y-6">
@@ -211,44 +269,62 @@ const SessionDetail: React.FC<Props> = ({
           )}
         </div>
         {(session.references.length > 0 || byType.reference.length > 0) ? (
-          <ul className="space-y-2">
-            {session.references.map((ref, idx) => (
-              <li key={`s-ref-${idx}`} className="border-l-2 border-gray-300 pl-3">
-                <div className="text-gray-800">• {ref}</div>
-                <div className="text-xs text-gray-400 mt-1">系統資料</div>
-              </li>
-            ))}
-            {byType.reference.map((i) => (
-              <li key={`i-ref-${i.id}`} className="border-l-2 border-green-200 pl-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="text-gray-800">• {(i as any).content}</div>
-                    <div className="text-xs text-gray-400 mt-1">
-                      {getUserName(i.authorId)} • {formatDateTime(i.createdAt)}
-                    </div>
-                  </div>
-                  {canPerformInteractionAction(currentUser, 'edit', i) && (
-                    <div className="flex items-center gap-1 ml-2">
-                      <button
-                        onClick={() => onEditInteraction?.(i)}
-                        className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
-                        title="編輯"
-                      >
-                        <Edit className="w-3 h-3" />
-                      </button>
-                      <button
-                        onClick={() => onDeleteInteraction?.(i)}
-                        className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
-                        title="刪除"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    </div>
-                  )}
+          <div className="space-y-4">
+            {(['web', 'book', 'paper'] as ReferenceCategory[]).map(category => {
+              const categoryRefs = groupedReferences[category];
+              if (categoryRefs.length === 0) return null;
+
+              return (
+                <div key={category}>
+                  <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                    <span>{getCategoryIcon(category)}</span>
+                    {getCategoryName(category)} ({categoryRefs.length})
+                  </h4>
+                  <ul className="space-y-2 ml-4">
+                    {categoryRefs.map((ref, idx) => (
+                      <li key={ref.isSessionRef ? `s-ref-${category}-${idx}` : `i-ref-${ref.id}`} className="border-l-2 border-green-200 pl-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <a href={ref.url} target="_blank" rel="noreferrer" className="text-green-600 hover:underline font-medium">
+                              {ref.label}
+                            </a>
+                            {ref.description && <span className="text-gray-500 ml-2">— {ref.description}</span>}
+                            <div className="text-xs text-gray-400 mt-1">
+                              {ref.isSessionRef ? '系統資料' : `${getUserName(ref.authorId)} • ${formatDateTime(ref.createdAt)}`}
+                            </div>
+                          </div>
+                          {!ref.isSessionRef && canPerformInteractionAction(currentUser, 'edit', { authorId: ref.authorId }) && (
+                            <div className="flex items-center gap-1 ml-2">
+                              <button
+                                onClick={() => {
+                                  const interaction = byType.reference.find((i: any) => i.id === ref.id);
+                                  if (interaction) onEditInteraction?.(interaction);
+                                }}
+                                className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                                title="編輯"
+                              >
+                                <Edit className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  const interaction = byType.reference.find((i: any) => i.id === ref.id);
+                                  if (interaction) onDeleteInteraction?.(interaction);
+                                }}
+                                className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+                                title="刪除"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              </li>
-            ))}
-          </ul>
+              );
+            })}
+          </div>
         ) : (
           <p className="text-gray-500 text-sm">{t('interaction.noContent')}</p>
         )}

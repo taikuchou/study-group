@@ -3,7 +3,7 @@ import {
   Calendar, FileText, Link as LinkIcon, MessageSquare,
   Heart, Lightbulb, Edit, Trash2, User as UserIcon, ChevronLeft, Plus, Users, X, Check, X as XIcon
 } from 'lucide-react';
-import type { Topic, User, Interaction } from '../../../types';
+import type { Topic, User, Interaction, ReferenceLink, ReferenceCategory } from '../../../types';
 import { useTranslation } from '../../../context/LanguageContext';
 
 type Session = Topic['sessions'][number];
@@ -213,7 +213,13 @@ const SessionDetail: React.FC<Props> = ({
           <ul className="space-y-2">
             {session.references.map((ref, idx) => (
               <li key={`s-ref-${idx}`} className="border-l-2 border-gray-300 pl-3">
-                <div className="text-gray-800">• {ref}</div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs">{ref.category === 'web' ? '🌐' : ref.category === 'book' ? '📚' : '📄'}</span>
+                  <a href={ref.url} target="_blank" rel="noreferrer" className="text-green-600 hover:underline font-medium">
+                    {ref.label}
+                  </a>
+                </div>
+                {ref.description && <span className="text-gray-500 ml-2">— {ref.description}</span>}
                 <div className="text-xs text-gray-400 mt-1">系統資料</div>
               </li>
             ))}
@@ -221,7 +227,13 @@ const SessionDetail: React.FC<Props> = ({
               <li key={`i-ref-${i.id}`} className="border-l-2 border-green-200 pl-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="text-gray-800">• {(i as any).content}</div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs">{((i as any).category === 'web') ? '🌐' : ((i as any).category === 'book') ? '📚' : '📄'}</span>
+                      <a href={(i as any).url} target="_blank" rel="noreferrer" className="text-green-600 hover:underline font-medium">
+                        {(i as any).label}
+                      </a>
+                    </div>
+                    {(i as any).description && <span className="text-gray-500 ml-2">— {(i as any).description}</span>}
                     <div className="text-xs text-gray-400 mt-1">
                       {getUserName(i.authorId)} • {formatDateTime(i.createdAt)}
                     </div>

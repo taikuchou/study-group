@@ -24,7 +24,8 @@ const InteractionForm: React.FC<Props> = ({
     content: '',
     label: '',
     description: '',
-    url: ''
+    url: '',
+    category: 'web' as 'web' | 'book' | 'paper'
   });
   const [loading, setLoading] = useState(false);
 
@@ -34,14 +35,16 @@ const InteractionForm: React.FC<Props> = ({
         content: (initialValue as any).content || '',
         label: (initialValue as any).label || '',
         description: (initialValue as any).description || '',
-        url: (initialValue as any).url || ''
+        url: (initialValue as any).url || '',
+        category: (initialValue as any).category || 'web'
       });
     } else {
       setFormData({
         content: '',
         label: '',
         description: '',
-        url: ''
+        url: '',
+        category: 'web'
       });
     }
   }, [initialValue, open]);
@@ -51,11 +54,12 @@ const InteractionForm: React.FC<Props> = ({
     setLoading(true);
     
     try {
-      if (type === 'noteLink') {
+      if (type === 'noteLink' || type === 'reference') {
         await onSubmit('', {
           label: formData.label,
           description: formData.description,
-          url: formData.url
+          url: formData.url,
+          category: formData.category
         });
       } else {
         await onSubmit(formData.content);
@@ -96,7 +100,7 @@ const InteractionForm: React.FC<Props> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {type === 'noteLink' ? (
+          {(type === 'noteLink' || type === 'reference') ? (
             <>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -138,6 +142,24 @@ const InteractionForm: React.FC<Props> = ({
                   placeholder="https://"
                 />
               </div>
+              
+              {type === 'reference' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {t('form.referenceCategory')} *
+                  </label>
+                  <select
+                    required
+                    value={formData.category}
+                    onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value as 'web' | 'book' | 'paper' }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="web">{t('form.referenceCategoryWeb')}</option>
+                    <option value="book">{t('form.referenceCategoryBook')}</option>
+                    <option value="paper">{t('form.referenceCategoryPaper')}</option>
+                  </select>
+                </div>
+              )}
             </>
           ) : (
             <div>
